@@ -26,6 +26,7 @@ import {
   MAX_SQRT_RATIO,
   MIN_SQRT_RATIO,
   SwapToPriceFunction,
+  getLogIndex,
 } from './shared/utilities'
 import { TestUniswapV3Callee } from '../typechain/TestUniswapV3Callee'
 import { TestUniswapV3ReentrantCallee } from '../typechain/TestUniswapV3ReentrantCallee'
@@ -75,7 +76,7 @@ describe('UniswapV3Pool', () => {
     ;({ token0, token1, token2, factory, createPool, swapTargetCallee: swapTarget } = await loadFixture(poolFixture))
 
     const oldCreatePool = createPool
-    createPool = async (_feeAmount, _tickSpacing) => {
+    createPool = async (_feeAmount: any, _tickSpacing: any) => {
       const pool = await oldCreatePool(_feeAmount, _tickSpacing)
       ;({
         swapToLowerPrice,
@@ -157,7 +158,7 @@ describe('UniswapV3Pool', () => {
 
   describe('#increaseObservationCardinalityNext', () => {
     it('can only be called after initialize', async () => {
-      await expect(pool.increaseObservationCardinalityNext(2)).to.be.revertedWith('LOK')
+      await expect(pool.increaseObservationCardinalityNext(2)).to.be.reverted
     })
     it('emits an event including both old and new', async () => {
       await pool.initialize(encodePriceSqrt(1, 1))
@@ -187,7 +188,7 @@ describe('UniswapV3Pool', () => {
 
   describe('#mint', () => {
     it('fails if not initialized', async () => {
-      await expect(mint(wallet.address, -tickSpacing, tickSpacing, 1)).to.be.revertedWith('LOK')
+      await expect(mint(wallet.address, -tickSpacing, tickSpacing, 1)).to.be.reverted
     })
     describe('after initialization', () => {
       beforeEach('initialize the pool at price of 10:1', async () => {
@@ -196,16 +197,17 @@ describe('UniswapV3Pool', () => {
       })
 
       describe('failure cases', () => {
+        // OVM: Check Tick errors have been combined to `CT`
         it('fails if tickLower greater than tickUpper', async () => {
           // should be TLU but...hardhat
-          await expect(mint(wallet.address, 1, 0, 1)).to.be.reverted
+          await expect(mint(wallet.address, 1, 0, 1)).to.be.revertedWith('CT')
         })
         it('fails if tickLower less than min tick', async () => {
           // should be TLM but...hardhat
-          await expect(mint(wallet.address, -887273, 0, 1)).to.be.reverted
+          await expect(mint(wallet.address, -887273, 0, 1)).to.be.revertedWith('CT')
         })
         it('fails if tickUpper greater than max tick', async () => {
-          // should be TUM but...hardhat
+          // should be TLM but...hardhat
           await expect(mint(wallet.address, 0, 887273, 1)).to.be.reverted
         })
         it('fails if amount exceeds the max', async () => {
@@ -1348,8 +1350,15 @@ describe('UniswapV3Pool', () => {
   // https://github.com/Uniswap/uniswap-v3-core/issues/214
   it('tick transition cannot run twice if zero for one swap ends at fractional price just below tick', async () => {
     pool = await createPool(FeeAmount.MEDIUM, 1)
-    const sqrtTickMath = (await (await ethers.getContractFactory('TickMathTest')).deploy()) as TickMathTest
-    const swapMath = (await (await ethers.getContractFactory('SwapMathTest')).deploy()) as SwapMathTest
+
+    const tickMathLib = await (await ethers.getContractFactory('TickMath')).deploy()
+    const sqrtTickMath = (await (
+      await ethers.getContractFactory('TickMathTest', { libraries: { TickMath: tickMathLib.address } })
+    ).deploy()) as TickMathTest
+    const swapMathLib = await (await ethers.getContractFactory('SwapMath')).deploy()
+    const swapMath = (await (
+      await ethers.getContractFactory('SwapMathTest', { libraries: { SwapMath: swapMathLib.address } })
+    ).deploy()) as SwapMathTest
     const p0 = (await sqrtTickMath.getSqrtRatioAtTick(-24081)).add(1)
     // initialize at a price of ~0.3 token1/token0
     // meaning if you swap in 2 token0, you should end up getting 0 token1
@@ -1381,10 +1390,17 @@ describe('UniswapV3Pool', () => {
     }
 
     // swap 2 amount in, should get 0 amount out
-    await expect(swapExact0For1(3, wallet.address))
-      .to.emit(token0, 'Transfer')
-      .withArgs(wallet.address, pool.address, 3)
-      .to.not.emit(token1, 'Transfer')
+    let tx = await swapExact0For1(3, wallet.address)
+    const { logs } = await tx.wait()
+    expect(logs.length).to.be.equal(getLogIndex(3))
+    const log = token0.interface.decodeEventLog('Transfer', logs[getLogIndex(1)].data, logs[getLogIndex(1)].topics)
+    expect(log.from).to.be.equal(wallet.address)
+    expect(log.to).to.be.equal(pool.address)
+    expect(log.value).to.be.equal(3)
+    // await expect(swapExact0For1(3, wallet.address))
+    //   .to.emit(token0, 'Transfer')
+    //   .withArgs(wallet.address, pool.address, 3)
+    //   .to.not.emit(token1, 'Transfer')
 
     const { tick, sqrtPriceX96 } = await pool.slot0()
 
@@ -1401,9 +1417,9 @@ describe('UniswapV3Pool', () => {
     })
     it('fails if no liquidity', async () => {
       await pool.initialize(encodePriceSqrt(1, 1))
-      await expect(flash(100, 200, other.address)).to.be.revertedWith('L')
-      await expect(flash(100, 0, other.address)).to.be.revertedWith('L')
-      await expect(flash(0, 200, other.address)).to.be.revertedWith('L')
+      await expect(flash(100, 200, other.address)).to.be.reverted
+      await expect(flash(100, 0, other.address)).to.be.reverted
+      await expect(flash(0, 200, other.address)).to.be.reverted
     })
     describe('after liquidity added', () => {
       let balance0: BigNumber
@@ -1688,7 +1704,8 @@ describe('UniswapV3Pool', () => {
       ).deploy()) as TestUniswapV3ReentrantCallee
 
       // the tests happen in solidity
-      await expect(reentrant.swapToReenter(pool.address)).to.be.revertedWith('Unable to reenter')
+      // OVM Note: We combined the `lock` check inside `swap`
+      await expect(reentrant.swapToReenter(pool.address)).to.be.reverted
     })
   })
 
@@ -1979,64 +1996,49 @@ describe('UniswapV3Pool', () => {
     })
 
     it('underpay zero for one and exact in', async () => {
-      await expect(
-        underpay.swap(pool.address, wallet.address, true, MIN_SQRT_RATIO.add(1), 1000, 1, 0)
-      ).to.be.revertedWith('IIA')
+      await expect(underpay.swap(pool.address, wallet.address, true, MIN_SQRT_RATIO.add(1), 1000, 1, 0)).to.be.reverted
     })
     it('pay in the wrong token zero for one and exact in', async () => {
-      await expect(
-        underpay.swap(pool.address, wallet.address, true, MIN_SQRT_RATIO.add(1), 1000, 0, 2000)
-      ).to.be.revertedWith('IIA')
+      await expect(underpay.swap(pool.address, wallet.address, true, MIN_SQRT_RATIO.add(1), 1000, 0, 2000)).to.be
+        .reverted
     })
     it('overpay zero for one and exact in', async () => {
-      await expect(
-        underpay.swap(pool.address, wallet.address, true, MIN_SQRT_RATIO.add(1), 1000, 2000, 0)
-      ).to.not.be.revertedWith('IIA')
+      await expect(underpay.swap(pool.address, wallet.address, true, MIN_SQRT_RATIO.add(1), 1000, 2000, 0)).to.not.be
+        .reverted
     })
     it('underpay zero for one and exact out', async () => {
-      await expect(
-        underpay.swap(pool.address, wallet.address, true, MIN_SQRT_RATIO.add(1), -1000, 1, 0)
-      ).to.be.revertedWith('IIA')
+      await expect(underpay.swap(pool.address, wallet.address, true, MIN_SQRT_RATIO.add(1), -1000, 1, 0)).to.be.reverted
     })
     it('pay in the wrong token zero for one and exact out', async () => {
-      await expect(
-        underpay.swap(pool.address, wallet.address, true, MIN_SQRT_RATIO.add(1), -1000, 0, 2000)
-      ).to.be.revertedWith('IIA')
+      await expect(underpay.swap(pool.address, wallet.address, true, MIN_SQRT_RATIO.add(1), -1000, 0, 2000)).to.be
+        .reverted
     })
     it('overpay zero for one and exact out', async () => {
-      await expect(
-        underpay.swap(pool.address, wallet.address, true, MIN_SQRT_RATIO.add(1), -1000, 2000, 0)
-      ).to.not.be.revertedWith('IIA')
+      await expect(underpay.swap(pool.address, wallet.address, true, MIN_SQRT_RATIO.add(1), -1000, 2000, 0)).to.not.be
+        .reverted
     })
     it('underpay one for zero and exact in', async () => {
-      await expect(
-        underpay.swap(pool.address, wallet.address, false, MAX_SQRT_RATIO.sub(1), 1000, 0, 1)
-      ).to.be.revertedWith('IIA')
+      await expect(underpay.swap(pool.address, wallet.address, false, MAX_SQRT_RATIO.sub(1), 1000, 0, 1)).to.be.reverted
     })
     it('pay in the wrong token one for zero and exact in', async () => {
-      await expect(
-        underpay.swap(pool.address, wallet.address, false, MAX_SQRT_RATIO.sub(1), 1000, 2000, 0)
-      ).to.be.revertedWith('IIA')
+      await expect(underpay.swap(pool.address, wallet.address, false, MAX_SQRT_RATIO.sub(1), 1000, 2000, 0)).to.be
+        .reverted
     })
     it('overpay one for zero and exact in', async () => {
-      await expect(
-        underpay.swap(pool.address, wallet.address, false, MAX_SQRT_RATIO.sub(1), 1000, 0, 2000)
-      ).to.not.be.revertedWith('IIA')
+      await expect(underpay.swap(pool.address, wallet.address, false, MAX_SQRT_RATIO.sub(1), 1000, 0, 2000)).to.not.be
+        .reverted
     })
     it('underpay one for zero and exact out', async () => {
-      await expect(
-        underpay.swap(pool.address, wallet.address, false, MAX_SQRT_RATIO.sub(1), -1000, 0, 1)
-      ).to.be.revertedWith('IIA')
+      await expect(underpay.swap(pool.address, wallet.address, false, MAX_SQRT_RATIO.sub(1), -1000, 0, 1)).to.be
+        .reverted
     })
     it('pay in the wrong token one for zero and exact out', async () => {
-      await expect(
-        underpay.swap(pool.address, wallet.address, false, MAX_SQRT_RATIO.sub(1), -1000, 2000, 0)
-      ).to.be.revertedWith('IIA')
+      await expect(underpay.swap(pool.address, wallet.address, false, MAX_SQRT_RATIO.sub(1), -1000, 2000, 0)).to.be
+        .reverted
     })
     it('overpay one for zero and exact out', async () => {
-      await expect(
-        underpay.swap(pool.address, wallet.address, false, MAX_SQRT_RATIO.sub(1), -1000, 0, 2000)
-      ).to.not.be.revertedWith('IIA')
+      await expect(underpay.swap(pool.address, wallet.address, false, MAX_SQRT_RATIO.sub(1), -1000, 0, 2000)).to.not.be
+        .reverted
     })
   })
 })

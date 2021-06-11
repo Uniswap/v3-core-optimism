@@ -8,6 +8,7 @@ import { expect } from './shared/expect'
 
 import { poolFixture } from './shared/fixtures'
 import { formatPrice, formatTokenAmount } from './shared/format'
+import { getLogIndex } from './shared/utilities'
 
 import {
   createPoolFunctions,
@@ -97,7 +98,10 @@ describe('UniswapV3Pool arbitrage tests', () => {
             const testerFactory = await ethers.getContractFactory('UniswapV3PoolSwapTest')
             const tester = (await testerFactory.deploy()) as UniswapV3PoolSwapTest
 
-            const tickMathFactory = await ethers.getContractFactory('TickMathTest')
+            const tickMathLib = await (await ethers.getContractFactory('TickMath')).deploy()
+            const tickMathFactory = await ethers.getContractFactory('TickMathTest', {
+              libraries: { TickMath: tickMathLib.address },
+            })
             const tickMath = (await tickMathFactory.deploy()) as TickMathTest
 
             await fix.token0.approve(tester.address, MaxUint256)
@@ -240,10 +244,11 @@ describe('UniswapV3Pool arbitrage tests', () => {
                 const mintReceipt = await (
                   await mint(wallet.address, tickLower, tickUpper, getMaxLiquidityPerTick(tickSpacing))
                 ).wait()
+
                 // sub the mint costs
                 const { amount0: amount0Mint, amount1: amount1Mint } = pool.interface.decodeEventLog(
                   pool.interface.events['Mint(address,address,int24,int24,uint128,uint256,uint256)'],
-                  mintReceipt.events?.[2].data!
+                  mintReceipt.events?.[getLogIndex(2)].data!
                 )
                 arbBalance0 = arbBalance0.sub(amount0Mint)
                 arbBalance1 = arbBalance1.sub(amount1Mint)

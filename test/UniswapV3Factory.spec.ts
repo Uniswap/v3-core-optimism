@@ -1,6 +1,7 @@
 import { ethers, waffle } from 'hardhat'
 import { UniswapV3Factory } from '../typechain/UniswapV3Factory'
 import { expect } from './shared/expect'
+import { getLogIndex } from './shared/utilities'
 import snapshotGasCost from './shared/snapshotGasCost'
 
 import { FeeAmount, getCreate2Address, TICK_SPACINGS } from './shared/utilities'
@@ -18,11 +19,9 @@ describe('UniswapV3Factory', () => {
   const [wallet, other] = waffle.provider.getWallets()
 
   let factory: UniswapV3Factory
+  let poolContractFactory: any
   let poolBytecode: string
-  const fixture = async () => {
-    const factoryFactory = await ethers.getContractFactory('UniswapV3Factory')
-    return (await factoryFactory.deploy()) as UniswapV3Factory
-  }
+  let libraries: any
 
   let loadFixture: ReturnType<typeof createFixtureLoader>
   before('create fixture loader', async () => {
@@ -30,11 +29,32 @@ describe('UniswapV3Factory', () => {
   })
 
   before('load pool bytecode', async () => {
-    poolBytecode = (await ethers.getContractFactory('UniswapV3Pool')).bytecode
+    const position = await (await ethers.getContractFactory('Position')).deploy()
+    const oracle = await (await ethers.getContractFactory('Oracle')).deploy()
+    const swapMath = await (await ethers.getContractFactory('SwapMath')).deploy()
+    const tick = await (await ethers.getContractFactory('Tick')).deploy()
+    const tickBitmap = await (await ethers.getContractFactory('TickBitmap')).deploy()
+    const tickMath = await (await ethers.getContractFactory('TickMath')).deploy()
+    libraries = {
+      Position: position.address,
+      Oracle: oracle.address,
+      Tick: tick.address,
+      TickBitmap: tickBitmap.address,
+      TickMath: tickMath.address,
+      SwapMath: swapMath.address,
+    }
+    poolContractFactory = await ethers.getContractFactory('UniswapV3Pool', { libraries })
+    poolBytecode = poolContractFactory.bytecode
   })
 
   beforeEach('deploy factory', async () => {
-    factory = await loadFixture(fixture)
+    const deployer = await (await ethers.getContractFactory('UniswapV3PoolDeployer', { libraries })).deploy()
+    const factoryFactory = await ethers.getContractFactory('UniswapV3Factory', {
+      libraries: {
+        UniswapV3PoolDeployer: deployer.address,
+      },
+    })
+    factory = (await factoryFactory.deploy()) as UniswapV3Factory
   })
 
   it('owner is deployer', async () => {
@@ -65,16 +85,23 @@ describe('UniswapV3Factory', () => {
     const create2Address = getCreate2Address(factory.address, tokens, feeAmount, poolBytecode)
     const create = factory.createPool(tokens[0], tokens[1], feeAmount)
 
-    await expect(create)
-      .to.emit(factory, 'PoolCreated')
-      .withArgs(TEST_ADDRESSES[0], TEST_ADDRESSES[1], feeAmount, tickSpacing, create2Address)
+    const { logs } = await (await create).wait()
+    // Cannot seem to parse events with waffle for some reason?
+    // await expect(create)
+    // .to.emit(factory, 'PoolCreated')
+    // .withArgs(TEST_ADDRESSES[0], TEST_ADDRESSES[1], feeAmount, tickSpacing, create2Address)
+    const log = factory.interface.decodeEventLog('PoolCreated', logs[getLogIndex(0)].data, logs[getLogIndex(0)].topics)
+    expect(log.token0).to.be.eq(TEST_ADDRESSES[0])
+    expect(log.token1).to.be.eq(TEST_ADDRESSES[1])
+    expect(log.fee).to.be.eq(feeAmount)
+    expect(log.tickSpacing).to.be.eq(tickSpacing)
+    expect(log.pool).to.be.eq(create2Address)
 
     await expect(factory.createPool(tokens[0], tokens[1], feeAmount)).to.be.reverted
     await expect(factory.createPool(tokens[1], tokens[0], feeAmount)).to.be.reverted
     expect(await factory.getPool(tokens[0], tokens[1], feeAmount), 'getPool in order').to.eq(create2Address)
     expect(await factory.getPool(tokens[1], tokens[0], feeAmount), 'getPool in reverse').to.eq(create2Address)
 
-    const poolContractFactory = await ethers.getContractFactory('UniswapV3Pool')
     const pool = poolContractFactory.attach(create2Address)
     expect(await pool.factory(), 'pool factory address').to.eq(factory.address)
     expect(await pool.token0(), 'pool token0').to.eq(TEST_ADDRESSES[0])
@@ -106,9 +133,7 @@ describe('UniswapV3Factory', () => {
     it('fails if token a is 0 or token b is 0', async () => {
       await expect(factory.createPool(TEST_ADDRESSES[0], constants.AddressZero, FeeAmount.LOW)).to.be.reverted
       await expect(factory.createPool(constants.AddressZero, TEST_ADDRESSES[0], FeeAmount.LOW)).to.be.reverted
-      await expect(factory.createPool(constants.AddressZero, constants.AddressZero, FeeAmount.LOW)).to.be.revertedWith(
-        ''
-      )
+      await expect(factory.createPool(constants.AddressZero, constants.AddressZero, FeeAmount.LOW)).to.be.reverted
     })
 
     it('fails if fee amount is not enabled', async () => {
@@ -126,14 +151,20 @@ describe('UniswapV3Factory', () => {
     })
 
     it('updates owner', async () => {
-      await factory.setOwner(other.address)
+      const tx = await factory.setOwner(other.address)
       expect(await factory.owner()).to.eq(other.address)
     })
 
     it('emits event', async () => {
-      await expect(factory.setOwner(other.address))
-        .to.emit(factory, 'OwnerChanged')
-        .withArgs(wallet.address, other.address)
+      const tx = await factory.setOwner(other.address)
+      const { logs } = await tx.wait()
+      const { oldOwner, newOwner } = factory.interface.decodeEventLog(
+        'OwnerChanged',
+        logs[getLogIndex(0)].data,
+        logs[getLogIndex(0)].topics
+      )
+      expect(oldOwner).to.be.eq(wallet.address)
+      expect(newOwner).to.be.eq(other.address)
     })
 
     it('cannot be called by original owner', async () => {
@@ -164,7 +195,15 @@ describe('UniswapV3Factory', () => {
       expect(await factory.feeAmountTickSpacing(100)).to.eq(5)
     })
     it('emits an event', async () => {
-      await expect(factory.enableFeeAmount(100, 5)).to.emit(factory, 'FeeAmountEnabled').withArgs(100, 5)
+      const tx = await factory.enableFeeAmount(100, 5)
+      const { logs } = await tx.wait()
+      const log = factory.interface.decodeEventLog(
+        'FeeAmountEnabled',
+        logs[getLogIndex(0)].data,
+        logs[getLogIndex(0)].topics
+      )
+      expect(log[0]).to.be.eq(100)
+      expect(log[1]).to.be.eq(5)
     })
     it('enables pool creation', async () => {
       await factory.enableFeeAmount(250, 15)
