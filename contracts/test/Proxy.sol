@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: BUSL-1.1
+// SPDX-License-Identifier: UNLICENSED
 pragma solidity =0.7.6;
 
 /// @notice Simple Proxy that passes calls to its implementation

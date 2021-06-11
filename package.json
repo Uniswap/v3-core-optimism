@@ -5,7 +5,7 @@
   "publishConfig": {
     "access": "restricted"
   },
-  "version": "1.0.0-alpha.0",
+  "version": "1.0.0-alpha.1",
   "homepage": "https://uniswap.org",
   "keywords": [
     "uniswap",
@@ -21,6 +21,7 @@
     "contracts/libraries",
     "artifacts-ovm/contracts/UniswapV3Factory.sol/UniswapV3Factory.json",
     "artifacts-ovm/contracts/UniswapV3Pool.sol/UniswapV3Pool.json",
+    "artifacts-ovm/contracts/UniswapV3PoolDeployer.sol/UniswapV3PoolDeployer.json",
     "artifacts-ovm/contracts/interfaces/**/*.json",
     "artifacts-ovm/contracts/libraries/**/*.json",
     "!artifacts-ovm/contracts/**/*.dbg.json"
