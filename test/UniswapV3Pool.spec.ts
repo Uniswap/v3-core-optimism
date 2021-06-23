@@ -1348,7 +1348,6 @@ describe('UniswapV3Pool', () => {
     })
   })
 
-  // https://github.com/Uniswap/uniswap-v3-core/issues/214
   it('tick transition cannot run twice if zero for one swap ends at fractional price just below tick', async () => {
     pool = await createPool(FeeAmount.MEDIUM, 1)
 
