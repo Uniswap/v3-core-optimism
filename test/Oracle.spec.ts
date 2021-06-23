@@ -1,4 +1,4 @@
-import { BigNumber, BigNumberish, Wallet } from 'ethers'
+import { BigNumber, BigNumberish } from 'ethers'
 import { ethers, waffle } from 'hardhat'
 import { OracleTest } from '../typechain/OracleTest'
 import checkObservationEquals from './shared/checkObservationEquals'
@@ -7,12 +7,13 @@ import { TEST_POOL_START_TIME } from './shared/fixtures'
 import snapshotGasCost from './shared/snapshotGasCost'
 import { MaxUint128 } from './shared/utilities'
 
+const Q128 = BigNumber.from(2).pow(128)
+
 describe('Oracle', () => {
-  let wallet: Wallet, other: Wallet
+  const [wallet, other] = waffle.provider.getWallets()
 
   let loadFixture: ReturnType<typeof waffle.createFixtureLoader>
   before('create fixture loader', async () => {
-    ;[wallet, other] = await (ethers as any).getSigners()
     loadFixture = waffle.createFixtureLoader([wallet, other])
   })
 
