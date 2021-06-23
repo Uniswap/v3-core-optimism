@@ -298,15 +298,15 @@ describe('UniswapV3Pool gas tests', () => {
 
       describe('#snapshotCumulativesInside', () => {
         it('tick inside', async () => {
-          await snapshotGasCost(pool.estimateGas.snapshotCumulativesInside(minTick, maxTick))
+          await snapshotGasCost(pool.estimateGas.snapshotCumulativesInside(minTick, maxTick, { gasLimit: 10000000 }))
         })
         it('tick above', async () => {
           await swapToHigherPrice(MAX_SQRT_RATIO.sub(1), wallet.address)
-          await snapshotGasCost(pool.estimateGas.snapshotCumulativesInside(minTick, maxTick))
+          await snapshotGasCost(pool.estimateGas.snapshotCumulativesInside(minTick, maxTick, { gasLimit: 10000000 }))
         })
         it('tick below', async () => {
           await swapToLowerPrice(MIN_SQRT_RATIO.add(1), wallet.address)
-          await snapshotGasCost(pool.estimateGas.snapshotCumulativesInside(minTick, maxTick))
+          await snapshotGasCost(pool.estimateGas.snapshotCumulativesInside(minTick, maxTick, { gasLimit: 10000000 }))
         })
       })
     })
