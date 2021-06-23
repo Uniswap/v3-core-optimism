@@ -1,35 +1,12 @@
-# Uniswap V3
+# Uniswap V3 Optimism
 
 [![Lint](https://github.com/Uniswap/uniswap-v3-core-optimism/actions/workflows/lint.yml/badge.svg)](https://github.com/Uniswap/uniswap-v3-core-optimism/actions/workflows/lint.yml)
 [![Tests](https://github.com/Uniswap/uniswap-v3-core-optimism/actions/workflows/tests.yml/badge.svg)](https://github.com/Uniswap/uniswap-v3-core-optimism/actions/workflows/tests.yml)
-[![Fuzz Testing](https://github.com/Uniswap/uniswap-v3-core-optimism/actions/workflows/fuzz-testing.yml/badge.svg)](https://github.com/Uniswap/uniswap-v3-core-optimism/actions/workflows/fuzz-testing.yml)
-[![Mythx](https://github.com/Uniswap/uniswap-v3-core-optimism/actions/workflows/mythx.yml/badge.svg)](https://github.com/Uniswap/uniswap-v3-core-optimism/actions/workflows/mythx.yml)
 [![npm version](https://img.shields.io/npm/v/@uniswap/v3-core/latest.svg)](https://www.npmjs.com/package/@uniswap/v3-core/v/latest)
 
-This repository contains the core smart contracts for the Uniswap V3 Protocol.
-For higher level contracts, see the [uniswap-v3-periphery](https://github.com/Uniswap/uniswap-v3-periphery)
+This repository contains the core smart contracts for the Uniswap V3 Protocol forked for Optimism.
+For higher level contracts, see the [uniswap-v3-periphery-optimism](https://github.com/Uniswap/uniswap-v3-periphery-optimism)
 repository.
-
-## Local deployment
-
-In order to deploy this code to a local testnet, you should install the npm package
-`@uniswap/v3-core`
-and import the factory bytecode located at
-`@uniswap/v3-core/artifacts/contracts/UniswapV3Factory.sol/UniswapV3Factory.json`.
-For example:
-
-```typescript
-import {
-  abi as FACTORY_ABI,
-  bytecode as FACTORY_BYTECODE,
-} from '@uniswap/v3-core/artifacts/contracts/UniswapV3Factory.sol/UniswapV3Factory.json'
-
-// deploy the bytecode
-```
-
-This will ensure that you are testing against the same bytecode that is deployed to
-mainnet and public testnets, and all Uniswap code will correctly interoperate with
-your local deployment.
 
 ## Using solidity interfaces
 
