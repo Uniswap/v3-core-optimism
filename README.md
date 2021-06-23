@@ -8,24 +8,6 @@ This repository contains the core smart contracts for the Uniswap V3 Protocol fo
 For higher level contracts, see the [uniswap-v3-periphery-optimism](https://github.com/Uniswap/uniswap-v3-periphery-optimism)
 repository.
 
-## Using solidity interfaces
-
-The Uniswap v3 interfaces are available for import into solidity smart contracts
-via the npm artifact `@uniswap/v3-core`, e.g.:
-
-```solidity
-import '@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol';
-
-contract MyContract {
-  IUniswapV3Pool pool;
-
-  function doSomethingWithPool() {
-    // pool.swap(...);
-  }
-}
-
-```
-
 ## Licensing
 
 The primary license for Uniswap V3 Core is the Business Source License 1.1 (`BUSL-1.1`), see [`LICENSE`](./LICENSE).
