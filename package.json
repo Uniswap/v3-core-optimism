@@ -2,7 +2,7 @@
   "name": "@uniswap/v3-core-optimism",
   "description": "🦄 Optimism fork of core smart contracts of Uniswap V3",
   "license": "BUSL-1.1",
-  "version": "1.0.0-alpha.2",
+  "version": "1.0.0-alpha.3",
   "homepage": "https://uniswap.org",
   "keywords": [
     "uniswap",
