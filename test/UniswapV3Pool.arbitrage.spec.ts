@@ -8,7 +8,7 @@ import { expect } from './shared/expect'
 
 import { poolFixture } from './shared/fixtures'
 import { formatPrice, formatTokenAmount } from './shared/format'
-import { getLogIndex } from './shared/utilities'
+import { getLogIndex, SwapToPriceFunction } from './shared/utilities'
 
 import {
   createPoolFunctions,
@@ -118,8 +118,8 @@ describe('UniswapV3Pool arbitrage tests', () => {
           }
 
           let swapExact0For1: SwapFunction
-          let swapToHigherPrice: SwapFunction
-          let swapToLowerPrice: SwapFunction
+          let swapToHigherPrice: SwapToPriceFunction
+          let swapToLowerPrice: SwapToPriceFunction
           let swapExact1For0: SwapFunction
           let pool: MockTimeUniswapV3Pool
           let mint: MintFunction
