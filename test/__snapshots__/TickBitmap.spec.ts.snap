@@ -1,10 +1,10 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`TickBitmap #flipTick gas cost of flipping a tick that results in deleting a word 1`] = `778839`;
+exports[`TickBitmap #flipTick gas cost of flipping a tick that results in deleting a word 1`] = `778827`;
 
 exports[`TickBitmap #flipTick gas cost of flipping first tick in word to initialized 1`] = `778851`;
 
-exports[`TickBitmap #flipTick gas cost of flipping second tick in word to initialized 1`] = `778839`;
+exports[`TickBitmap #flipTick gas cost of flipping second tick in word to initialized 1`] = `778851`;
 
 exports[`TickBitmap #nextInitializedTickWithinOneWord lte = false gas cost for entire word 1`] = `54108`;
 
