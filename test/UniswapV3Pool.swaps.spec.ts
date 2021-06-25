@@ -115,14 +115,14 @@ async function executeSwap(
           testCase.amount1,
           SWAP_RECIPIENT_ADDRESS,
           testCase.sqrtPriceLimit,
-          10_000_000
+          1_000_000_000
         )
       } else {
         swap = await poolFunctions.swap1ForExact0(
           testCase.amount0,
           SWAP_RECIPIENT_ADDRESS,
           testCase.sqrtPriceLimit,
-          10_000_000
+          1_000_000_000
         )
       }
     } else {
@@ -131,14 +131,14 @@ async function executeSwap(
           testCase.amount0,
           SWAP_RECIPIENT_ADDRESS,
           testCase.sqrtPriceLimit,
-          10_000_000
+          1_000_000_000
         )
       } else {
         swap = await poolFunctions.swapExact1For0(
           testCase.amount1,
           SWAP_RECIPIENT_ADDRESS,
           testCase.sqrtPriceLimit,
-          10_000_000
+          1_000_000_000
         )
       }
     }
