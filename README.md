@@ -2,7 +2,7 @@
 
 [![Lint](https://github.com/Uniswap/uniswap-v3-core-optimism/actions/workflows/lint.yml/badge.svg)](https://github.com/Uniswap/uniswap-v3-core-optimism/actions/workflows/lint.yml)
 [![Tests](https://github.com/Uniswap/uniswap-v3-core-optimism/actions/workflows/tests.yml/badge.svg)](https://github.com/Uniswap/uniswap-v3-core-optimism/actions/workflows/tests.yml)
-[![npm version](https://img.shields.io/npm/v/@uniswap/v3-core/latest.svg)](https://www.npmjs.com/package/@uniswap/v3-core/v/latest)
+[![npm version](https://img.shields.io/npm/v/@uniswap/v3-core-optimism/latest.svg)](https://www.npmjs.com/package/@uniswap/v3-core-optimism/v/latest)
 
 This repository contains the core smart contracts for the Uniswap V3 Protocol forked for Optimism.
 For higher level contracts, see the [uniswap-v3-periphery-optimism](https://github.com/Uniswap/uniswap-v3-periphery-optimism)

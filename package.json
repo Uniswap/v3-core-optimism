@@ -2,10 +2,7 @@
   "name": "@uniswap/v3-core-optimism",
   "description": "🦄 Optimism fork of core smart contracts of Uniswap V3",
   "license": "BUSL-1.1",
-  "publishConfig": {
-    "access": "restricted"
-  },
-  "version": "1.0.0-alpha.1",
+  "version": "1.0.0-alpha.3",
   "homepage": "https://uniswap.org",
   "keywords": [
     "uniswap",
@@ -18,8 +15,8 @@
     "url": "https://github.com/Uniswap/uniswap-v3-core-optimism"
   },
   "files": [
-    "contracts/interfaces",
-    "contracts/libraries",
+    "contracts",
+    "!contracts/test",
     "artifacts-ovm/contracts/UniswapV3Factory.sol/UniswapV3Factory.json",
     "artifacts-ovm/contracts/UniswapV3Pool.sol/UniswapV3Pool.json",
     "artifacts-ovm/contracts/UniswapV3PoolDeployer.sol/UniswapV3PoolDeployer.json",

@@ -111,22 +111,42 @@ async function executeSwap(
   if ('exactOut' in testCase) {
     if (testCase.exactOut) {
       if (testCase.zeroForOne) {
-        swap = await poolFunctions.swap0ForExact1(testCase.amount1, SWAP_RECIPIENT_ADDRESS, testCase.sqrtPriceLimit)
+        swap = await poolFunctions.swap0ForExact1(
+          testCase.amount1,
+          SWAP_RECIPIENT_ADDRESS,
+          testCase.sqrtPriceLimit,
+          1_000_000_000
+        )
       } else {
-        swap = await poolFunctions.swap1ForExact0(testCase.amount0, SWAP_RECIPIENT_ADDRESS, testCase.sqrtPriceLimit)
+        swap = await poolFunctions.swap1ForExact0(
+          testCase.amount0,
+          SWAP_RECIPIENT_ADDRESS,
+          testCase.sqrtPriceLimit,
+          1_000_000_000
+        )
       }
     } else {
       if (testCase.zeroForOne) {
-        swap = await poolFunctions.swapExact0For1(testCase.amount0, SWAP_RECIPIENT_ADDRESS, testCase.sqrtPriceLimit)
+        swap = await poolFunctions.swapExact0For1(
+          testCase.amount0,
+          SWAP_RECIPIENT_ADDRESS,
+          testCase.sqrtPriceLimit,
+          1_000_000_000
+        )
       } else {
-        swap = await poolFunctions.swapExact1For0(testCase.amount1, SWAP_RECIPIENT_ADDRESS, testCase.sqrtPriceLimit)
+        swap = await poolFunctions.swapExact1For0(
+          testCase.amount1,
+          SWAP_RECIPIENT_ADDRESS,
+          testCase.sqrtPriceLimit,
+          1_000_000_000
+        )
       }
     }
   } else {
     if (testCase.zeroForOne) {
-      swap = await poolFunctions.swapToLowerPrice(testCase.sqrtPriceLimit, SWAP_RECIPIENT_ADDRESS)
+      swap = await poolFunctions.swapToLowerPrice(testCase.sqrtPriceLimit, SWAP_RECIPIENT_ADDRESS, 1_000_000_000)
     } else {
-      swap = await poolFunctions.swapToHigherPrice(testCase.sqrtPriceLimit, SWAP_RECIPIENT_ADDRESS)
+      swap = await poolFunctions.swapToHigherPrice(testCase.sqrtPriceLimit, SWAP_RECIPIENT_ADDRESS, 1_000_000_000)
     }
   }
   return swap
@@ -510,7 +530,7 @@ describe('UniswapV3Pool swap tests', () => {
             await tx
           } catch (error) {
             expect({
-              swapError: error.message,
+              swapError: error.reason ?? error.message,
               poolBalance0: poolBalance0.toString(),
               poolBalance1: poolBalance1.toString(),
               poolPriceBefore: formatPrice(slot0.sqrtPriceX96),

@@ -79,9 +79,14 @@ export function getPositionKey(address: string, lowerTick: number, upperTick: nu
 export type SwapFunction = (
   amount: BigNumberish,
   to: Wallet | string,
-  sqrtPriceLimitX96?: BigNumberish
+  sqrtPriceLimitX96?: BigNumberish,
+  gasLimit?: number
 ) => Promise<ContractTransaction>
-export type SwapToPriceFunction = (sqrtPriceX96: BigNumberish, to: Wallet | string) => Promise<ContractTransaction>
+export type SwapToPriceFunction = (
+  sqrtPriceX96: BigNumberish,
+  to: Wallet | string,
+  gasLimit?: number
+) => Promise<ContractTransaction>
 export type FlashFunction = (
   amount0: BigNumberish,
   amount1: BigNumberish,
@@ -119,7 +124,8 @@ export function createPoolFunctions({
   async function swapToSqrtPrice(
     inputToken: Contract,
     targetPrice: BigNumberish,
-    to: Wallet | string
+    to: Wallet | string,
+    gasLimit?: number
   ): Promise<ContractTransaction> {
     const method = inputToken === token0 ? swapTarget.swapToLowerSqrtPrice : swapTarget.swapToHigherSqrtPrice
 
@@ -127,14 +133,15 @@ export function createPoolFunctions({
 
     const toAddress = typeof to === 'string' ? to : to.address
 
-    return method(pool.address, targetPrice, toAddress)
+    return method(pool.address, targetPrice, toAddress, { gasLimit })
   }
 
   async function swap(
     inputToken: Contract,
     [amountIn, amountOut]: [BigNumberish, BigNumberish],
     to: Wallet | string,
-    sqrtPriceLimitX96?: BigNumberish
+    sqrtPriceLimitX96?: BigNumberish,
+    gasLimit?: number
   ): Promise<ContractTransaction> {
     const exactInput = amountOut === 0
 
@@ -158,31 +165,31 @@ export function createPoolFunctions({
 
     const toAddress = typeof to === 'string' ? to : to.address
 
-    return method(pool.address, exactInput ? amountIn : amountOut, toAddress, sqrtPriceLimitX96)
+    return method(pool.address, exactInput ? amountIn : amountOut, toAddress, sqrtPriceLimitX96, { gasLimit })
   }
 
-  const swapToLowerPrice: SwapToPriceFunction = (sqrtPriceX96, to) => {
-    return swapToSqrtPrice(token0, sqrtPriceX96, to)
+  const swapToLowerPrice: SwapToPriceFunction = (sqrtPriceX96, to, gasLimit) => {
+    return swapToSqrtPrice(token0, sqrtPriceX96, to, gasLimit)
   }
 
-  const swapToHigherPrice: SwapToPriceFunction = (sqrtPriceX96, to) => {
-    return swapToSqrtPrice(token1, sqrtPriceX96, to)
+  const swapToHigherPrice: SwapToPriceFunction = (sqrtPriceX96, to, gasLimit) => {
+    return swapToSqrtPrice(token1, sqrtPriceX96, to, gasLimit)
   }
 
-  const swapExact0For1: SwapFunction = (amount, to, sqrtPriceLimitX96) => {
-    return swap(token0, [amount, 0], to, sqrtPriceLimitX96)
+  const swapExact0For1: SwapFunction = (amount, to, sqrtPriceLimitX96, gasLimit) => {
+    return swap(token0, [amount, 0], to, sqrtPriceLimitX96, gasLimit)
   }
 
-  const swap0ForExact1: SwapFunction = (amount, to, sqrtPriceLimitX96) => {
-    return swap(token0, [0, amount], to, sqrtPriceLimitX96)
+  const swap0ForExact1: SwapFunction = (amount, to, sqrtPriceLimitX96, gasLimit) => {
+    return swap(token0, [0, amount], to, sqrtPriceLimitX96, gasLimit)
   }
 
-  const swapExact1For0: SwapFunction = (amount, to, sqrtPriceLimitX96) => {
-    return swap(token1, [amount, 0], to, sqrtPriceLimitX96)
+  const swapExact1For0: SwapFunction = (amount, to, sqrtPriceLimitX96, gasLimit) => {
+    return swap(token1, [amount, 0], to, sqrtPriceLimitX96, gasLimit)
   }
 
-  const swap1ForExact0: SwapFunction = (amount, to, sqrtPriceLimitX96) => {
-    return swap(token1, [0, amount], to, sqrtPriceLimitX96)
+  const swap1ForExact0: SwapFunction = (amount, to, sqrtPriceLimitX96, gasLimit) => {
+    return swap(token1, [0, amount], to, sqrtPriceLimitX96, gasLimit)
   }
 
   const mint: MintFunction = async (recipient, tickLower, tickUpper, liquidity) => {
