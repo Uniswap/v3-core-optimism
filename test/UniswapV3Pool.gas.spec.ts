@@ -1,6 +1,7 @@
-import { waffle } from 'hardhat'
+import { ethers, waffle } from 'hardhat'
 import { Wallet } from 'ethers'
 import { MockTimeUniswapV3Pool } from '../typechain/MockTimeUniswapV3Pool'
+import { TestSnapshotCumulativesInside } from '../typechain/TestSnapshotCumulativesInside'
 import { expect } from './shared/expect'
 
 import { poolFixture } from './shared/fixtures'
@@ -297,16 +298,28 @@ describe('UniswapV3Pool gas tests', () => {
       })
 
       describe('#snapshotCumulativesInside', () => {
+        let tester: TestSnapshotCumulativesInside
+        beforeEach(async () => {
+          const factory = await ethers.getContractFactory('TestSnapshotCumulativesInside')
+          tester = (await factory.deploy()) as TestSnapshotCumulativesInside
+        })
+
         it('tick inside', async () => {
-          await snapshotGasCost(pool.estimateGas.snapshotCumulativesInside(minTick, maxTick, { gasLimit: 10000000 }))
+          await snapshotGasCost(
+            tester.getGasCostOfSnapshotCumulativesInside(pool.address, minTick, maxTick, { gasLimit: 10000000 })
+          )
         })
         it('tick above', async () => {
           await swapToHigherPrice(MAX_SQRT_RATIO.sub(1), wallet.address)
-          await snapshotGasCost(pool.estimateGas.snapshotCumulativesInside(minTick, maxTick, { gasLimit: 10000000 }))
+          await snapshotGasCost(
+            tester.getGasCostOfSnapshotCumulativesInside(pool.address, minTick, maxTick, { gasLimit: 10000000 })
+          )
         })
         it('tick below', async () => {
           await swapToLowerPrice(MIN_SQRT_RATIO.add(1), wallet.address)
-          await snapshotGasCost(pool.estimateGas.snapshotCumulativesInside(minTick, maxTick, { gasLimit: 10000000 }))
+          await snapshotGasCost(
+            tester.getGasCostOfSnapshotCumulativesInside(pool.address, minTick, maxTick, { gasLimit: 10000000 })
+          )
         })
       })
     })
