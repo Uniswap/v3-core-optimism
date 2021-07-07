@@ -49,12 +49,8 @@ library Position {
     ) public {
         Info memory _self = self;
 
-        uint128 liquidityNext;
         if (liquidityDelta == 0) {
             require(_self.liquidity > 0, 'NP'); // disallow pokes for 0 liquidity positions
-            liquidityNext = _self.liquidity;
-        } else {
-            liquidityNext = LiquidityMath.addDelta(_self.liquidity, liquidityDelta);
         }
 
         // calculate accumulated fees
@@ -76,7 +72,9 @@ library Position {
             );
 
         // update the position
-        if (liquidityDelta != 0) self.liquidity = liquidityNext;
+        if (liquidityDelta != 0) {
+            self.liquidity = LiquidityMath.addDelta(_self.liquidity, liquidityDelta);
+        }
         self.feeGrowthInside0LastX128 = feeGrowthInside0X128;
         self.feeGrowthInside1LastX128 = feeGrowthInside1X128;
         if (tokensOwed0 > 0 || tokensOwed1 > 0) {
