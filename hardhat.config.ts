@@ -252,6 +252,9 @@ export default {
       },
     },
   },
+  ovm: {
+    solcVersion: '0.7.6+commit.3b061308',
+  },
   mocha: {
     timeout: 180000,
   },
