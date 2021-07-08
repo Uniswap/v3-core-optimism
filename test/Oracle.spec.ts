@@ -638,7 +638,7 @@ describe('Oracle', () => {
     }
   })
 
-  describe.skip('full oracle', function () {
+  describe.only('full oracle', function () {
     this.timeout(100_000_000)
 
     let oracle: OracleTest
